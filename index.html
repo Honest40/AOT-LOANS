@@ -13,6 +13,7 @@ header span{color:#f4a300}
 input,select,textarea,button{width:100%;padding:10px;margin-top:8px}
 button{background:#f4a300;border:none;font-weight:bold;cursor:pointer}
 small{color:#666}
+#errorMsg{color:red;font-weight:bold;}
 </style>
 </head>
 <body>
@@ -42,7 +43,7 @@ small{color:#666}
 </select>
 <p>Interest Rate: <b><span id="rate">0%</span></b></p>
 <p>Total Payable: <b>ZMW <span id="total">0.00</span></b></p>
-<button onclick="calculate()">Calculate</button>
+<button id="calcBtn">Calculate</button>
 </div>
 
 <!-- Loan Application -->
@@ -90,8 +91,9 @@ small{color:#666}
 <input type="file" id="facePhoto" accept="image/*">
 
 <textarea id="purpose" placeholder="Purpose of Loan"></textarea>
-<button onclick="applyLoan()">Submit Application</button>
+<button id="submitBtn">Submit Application</button>
 <p id="msg"></p>
+<p id="errorMsg"></p>
 </div>
 
 </div>
@@ -118,92 +120,111 @@ const rates = {
  "1m":50,"2m":65,"3m":75,"4m":85,"5m":100
 };
 
-// Calculator
-window.calculate = ()=>{
- if(!amount.value || !duration.value){
-   rate.innerText="0%";
-   total.innerText="0.00";
-   return;
- }
- let r = rates[duration.value];
- let totalPay = Number(amount.value) + (amount.value * r / 100);
- rate.innerText = r + "%";
- total.innerText = totalPay.toFixed(2);
-};
+// Elements
+const nameEl = document.getElementById("name");
+const phoneEl = document.getElementById("phone");
+const nrcEl = document.getElementById("nrc");
+const statusEl = document.getElementById("status");
+const locationEl = document.getElementById("location");
+const paymentEl = document.getElementById("payment");
+const kinNameEl = document.getElementById("kinName");
+const kinPhoneEl = document.getElementById("kinPhone");
+const amountEl = document.getElementById("amount");
+const durationEl = document.getElementById("duration");
+const purposeEl = document.getElementById("purpose");
+const nrcFrontEl = document.getElementById("nrcFront");
+const nrcBackEl = document.getElementById("nrcBack");
+const facePhotoEl = document.getElementById("facePhoto");
+const msgEl = document.getElementById("msg");
+const errorEl = document.getElementById("errorMsg");
+const rateEl = document.getElementById("rate");
+const totalEl = document.getElementById("total");
+const calcBtn = document.getElementById("calcBtn");
+const submitBtn = document.getElementById("submitBtn");
 
-// Upload to Cloudinary unsigned
+// Calculator
+calcBtn.addEventListener("click", ()=>{
+ if(!amountEl.value || !durationEl.value){ rateEl.innerText="0%"; totalEl.innerText="0.00"; return; }
+ let r = rates[durationEl.value];
+ let totalPay = Number(amountEl.value) + (Number(amountEl.value) * r / 100);
+ rateEl.innerText = r + "%";
+ totalEl.innerText = totalPay.toFixed(2);
+});
+
+// Cloudinary Upload
 async function uploadToCloudinary(file, folder){
   const url = `https://api.cloudinary.com/v1_1/dc5moeafv/upload`;
-  const preset = "zedmarket"; // unsigned preset
-
+  const preset = "zedmarket"; 
   const formData = new FormData();
   formData.append("file", file);
   formData.append("upload_preset", preset);
   formData.append("folder", folder);
 
-  const res = await fetch(url,{method:"POST",body:formData});
-  const data = await res.json();
-  if(data.error) throw data.error;
-  return data.secure_url;
+  try{
+    const res = await fetch(url,{method:"POST",body:formData});
+    const data = await res.json();
+    if(data.error) throw data.error;
+    return data.secure_url;
+  }catch(e){
+    throw new Error("Cloudinary upload failed for " + folder + ": " + JSON.stringify(e));
+  }
 }
 
 // Submit Loan
-window.applyLoan = async ()=>{
- msg.innerText="Submitting...";
+submitBtn.addEventListener("click", async ()=>{
+ msgEl.innerText="Submitting..."; errorEl.innerText="";
 
- // Validate
- if(!name.value||!phone.value||!nrc.value||!status.value||!location.value||!payment.value||!kinName.value||!kinPhone.value||!amount.value||!duration.value||!purpose.value){
-   msg.innerText="Please fill all fields";
-   return;
+ if(!nameEl.value || !phoneEl.value || !nrcEl.value || !statusEl.value || !locationEl.value || !paymentEl.value || !kinNameEl.value || !kinPhoneEl.value || !amountEl.value || !durationEl.value || !purposeEl.value){
+   errorEl.innerText="Please fill all fields!"; msgEl.innerText=""; return;
  }
- if(!nrcFront.files[0]||!nrcBack.files[0]||!facePhoto.files[0]){
-   msg.innerText="Please upload all images";
-   return;
+ if(!nrcFrontEl.files[0] || !nrcBackEl.files[0] || !facePhotoEl.files[0]){
+   errorEl.innerText="Please upload all images!"; msgEl.innerText=""; return;
  }
 
  try{
    const [front, back, face] = await Promise.all([
-     uploadToCloudinary(nrcFront.files[0],"nrcFront"),
-     uploadToCloudinary(nrcBack.files[0],"nrcBack"),
-     uploadToCloudinary(facePhoto.files[0],"facePhoto")
+     uploadToCloudinary(nrcFrontEl.files[0],"nrcFront"),
+     uploadToCloudinary(nrcBackEl.files[0],"nrcBack"),
+     uploadToCloudinary(facePhotoEl.files[0],"facePhoto")
    ]);
 
-   const r = rates[duration.value] || 0;
-   const totalAmount = Number(amount.value) + (Number(amount.value)*r/100);
+   const r = rates[durationEl.value] || 0;
+   const totalAmount = Number(amountEl.value) + (Number(amountEl.value)*r/100);
 
    await addDoc(collection(db,"loans"),{
-     name:name.value,
-     phone:phone.value,
-     nrc:nrc.value,
-     status:status.value,
-     location:location.value,
-     payment:payment.value,
-     kin:{name:kinName.value, phone:kinPhone.value},
-     amount:Number(amount.value),
-     duration:duration.value,
+     name:nameEl.value,
+     phone:phoneEl.value,
+     nrc:nrcEl.value,
+     status:statusEl.value,
+     location:locationEl.value,
+     payment:paymentEl.value,
+     kin:{name:kinNameEl.value, phone:kinPhoneEl.value},
+     amount:Number(amountEl.value),
+     duration:durationEl.value,
      rate:r,
      total:totalAmount,
      nrcFront:front,
      nrcBack:back,
      facePhoto:face,
-     purpose:purpose.value,
+     purpose:purposeEl.value,
      loanStatus:"Pending",
      created:new Date()
    });
 
-   msg.innerText="Application submitted successfully ✔";
+   msgEl.innerText="Application submitted successfully ✔";
+   errorEl.innerText="";
 
    // Reset form
-   name.value=phone.value=nrc.value=status.value=location.value=payment.value=kinName.value=kinPhone.value=amount.value=duration.value=purpose.value="";
-   nrcFront.value=nrcBack.value=facePhoto.value=null;
-   rate.innerText="0%";
-   total.innerText="0.00";
+   nameEl.value=phoneEl.value=nrcEl.value=statusEl.value=locationEl.value=paymentEl.value=kinNameEl.value=kinPhoneEl.value=amountEl.value=durationEl.value=purposeEl.value="";
+   nrcFrontEl.value=nrcBackEl.value=facePhotoEl.value=null;
+   rateEl.innerText="0%"; totalEl.innerText="0.00";
 
  }catch(err){
-   console.error(err);
-   msg.innerText="Error submitting application ❌";
+   console.error("Submission Error:", err);
+   errorEl.innerText="Error submitting application! Check console.";
+   msgEl.innerText="";
  }
-};
+});
 </script>
 </body>
 </html>
