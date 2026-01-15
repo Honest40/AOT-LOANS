@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>AOT Loans</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body{margin:0;font-family:Arial;background:#f4f4f4}
+header{background:#000;color:#fff;padding:15px;text-align:center}
+header span{color:#f4a300}
+.container{max-width:900px;margin:auto;padding:10px}
+.box{background:#fff;padding:15px;margin-bottom:15px;border-radius:8px}
+input,select,textarea,button{width:100%;padding:10px;margin-top:8px}
+button{background:#f4a300;border:none;font-weight:bold;cursor:pointer}
+small{color:#666}
+</style>
+</head>
+
+<body>
+
+<header>
+<h2>AOT <span>Loans</span></h2>
+<small>Simple • Fast • Online Loans</small>
+</header>
+
+<div class="container">
+
+<!-- CALCULATOR -->
+<div class="box">
+<h3>Loan Calculator</h3>
+<input id="amount" type="number" placeholder="Loan Amount (ZMW)">
+
+<select id="duration">
+<option value="">Select Duration</option>
+<option value="2d">2 Days</option>
+<option value="5d">5 Days</option>
+<option value="1w">1 Week</option>
+<option value="2w">2 Weeks</option>
+<option value="1m">1 Month</option>
+<option value="2m">2 Months</option>
+<option value="3m">3 Months</option>
+<option value="4m">4 Months</option>
+<option value="5m">5 Months</option>
+</select>
+
+<p>Interest Rate: <b><span id="rate">0%</span></b></p>
+<p>Total Payable: <b>ZMW <span id="total">0.00</span></b></p>
+
+<button onclick="calculate()">Calculate</button>
+</div>
+
+<!-- APPLICATION -->
+<div class="box">
+<h3>Loan Application</h3>
+
+<input id="name" placeholder="Full Name">
+<input id="phone" placeholder="Phone Number">
+<input id="nrc" placeholder="NRC Number">
+
+<select id="status">
+<option value="">Status</option>
+<option>Student</option>
+<option>Employed</option>
+<option>Business Owner</option>
+</select>
+
+<select id="location">
+<option value="">Location</option>
+<option>Lusaka</option>
+<option>Copperbelt</option>
+<option>Central</option>
+<option>Eastern</option>
+<option>Northern</option>
+<option>Southern</option>
+<option>Western</option>
+<option>Muchinga</option>
+</select>
+
+<select id="payment">
+<option value="">Payment Method</option>
+<option>Mobile Money</option>
+<option>Bank Transfer</option>
+<option>Cash</option>
+</select>
+
+<h4>Next of Kin</h4>
+<input id="kinName" placeholder="Full Name">
+<input id="kinPhone" placeholder="Phone Number">
+
+<label>NRC Front</label>
+<input type="file" id="nrcFront" accept="image/*">
+
+<label>NRC Back</label>
+<input type="file" id="nrcBack" accept="image/*">
+
+<label>Face Photo</label>
+<input type="file" id="facePhoto" accept="image/*">
+
+<textarea id="purpose" placeholder="Purpose of Loan"></textarea>
+
+<button onclick="applyLoan()">Submit Application</button>
+<p id="msg"></p>
+</div>
+
+</div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
+import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-storage.js";
+
+const firebaseConfig = {
+ apiKey: "AIzaSyA97oQpA05T1r_BWfnJVz9j9MmqFv7SAIw",
+ authDomain: "aot-loans.firebaseapp.com",
+ projectId: "aot-loans",
+ storageBucket: "aot-loans.firebasestorage.app",
+ messagingSenderId: "1023143461166",
+ appId: "1:1023143461166:web:7025fd84b752fa26753abf"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const rates = {
+ "2d":20,"5d":25,"1w":30,"2w":40,
+ "1m":50,"2m":65,"3m":75,"4m":85,"5m":100
+};
+
+window.calculate = ()=>{
+ if(!amount.value || !duration.value) return;
+ let r = rates[duration.value];
+ let totalPay = Number(amount.value) + (amount.value * r / 100);
+ rate.innerText = r + "%";
+ total.innerText = totalPay.toFixed(2);
+};
+
+async function upload(file,path){
+ let r = ref(storage, path + Date.now());
+ await uploadBytes(r, file);
+ return await getDownloadURL(r);
+}
+
+window.applyLoan = async ()=>{
+ msg.innerText = "Submitting...";
+
+ if(!nrcFront.files[0] || !nrcBack.files[0] || !facePhoto.files[0]){
+  msg.innerText = "Please upload all images";
+  return;
+ }
+
+ let front = await upload(nrcFront.files[0], "nrcFront");
+ let back  = await upload(nrcBack.files[0], "nrcBack");
+ let face  = await upload(facePhoto.files[0], "facePhoto");
+
+ let r = rates[duration.value];
+ let interest = amount.value * r / 100;
+
+ await addDoc(collection(db,"loans"),{
+  name:name.value,
+  phone:phone.value,
+  nrc:nrc.value,
+  status:status.value,
+  location:location.value,
+  payment:payment.value,
+  kin:{name:kinName.value, phone:kinPhone.value},
+  amount:Number(amount.value),
+  duration:duration.value,
+  rate:r,
+  total:Number(amount.value) + interest,
+  nrcFront:front,
+  nrcBack:back,
+  facePhoto:face,
+  purpose:purpose.value,
+  loanStatus:"Pending",
+  created:new Date()
+ });
+
+ msg.innerText = "Application submitted successfully ✔";
+};
+</script>
+
+</body>
+</html>
