@@ -2,9 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AOT Loans</title>
+<title>AOT Loans - User</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
 <style>
 body{margin:0;font-family:Arial;background:#f4f4f4}
 header{background:#000;color:#fff;padding:15px;text-align:center}
@@ -16,7 +15,6 @@ button{background:#f4a300;border:none;font-weight:bold;cursor:pointer}
 small{color:#666}
 </style>
 </head>
-
 <body>
 
 <header>
@@ -26,11 +24,10 @@ small{color:#666}
 
 <div class="container">
 
-<!-- CALCULATOR -->
+<!-- Calculator -->
 <div class="box">
 <h3>Loan Calculator</h3>
 <input id="amount" type="number" placeholder="Loan Amount (ZMW)">
-
 <select id="duration">
 <option value="">Select Duration</option>
 <option value="2d">2 Days</option>
@@ -43,17 +40,14 @@ small{color:#666}
 <option value="4m">4 Months</option>
 <option value="5m">5 Months</option>
 </select>
-
 <p>Interest Rate: <b><span id="rate">0%</span></b></p>
 <p>Total Payable: <b>ZMW <span id="total">0.00</span></b></p>
-
 <button onclick="calculate()">Calculate</button>
 </div>
 
-<!-- APPLICATION -->
+<!-- Loan Application -->
 <div class="box">
 <h3>Loan Application</h3>
-
 <input id="name" placeholder="Full Name">
 <input id="phone" placeholder="Phone Number">
 <input id="nrc" placeholder="NRC Number">
@@ -90,15 +84,12 @@ small{color:#666}
 
 <label>NRC Front</label>
 <input type="file" id="nrcFront" accept="image/*">
-
 <label>NRC Back</label>
 <input type="file" id="nrcBack" accept="image/*">
-
 <label>Face Photo</label>
 <input type="file" id="facePhoto" accept="image/*">
 
 <textarea id="purpose" placeholder="Purpose of Loan"></textarea>
-
 <button onclick="applyLoan()">Submit Application</button>
 <p id="msg"></p>
 </div>
@@ -118,7 +109,6 @@ const firebaseConfig = {
  messagingSenderId: "1023143461166",
  appId: "1:1023143461166:web:7025fd84b752fa26753abf"
 };
-
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
@@ -130,76 +120,90 @@ const rates = {
 
 // Calculator
 window.calculate = ()=>{
- if(!amount.value || !duration.value) return;
+ if(!amount.value || !duration.value){
+   rate.innerText="0%";
+   total.innerText="0.00";
+   return;
+ }
  let r = rates[duration.value];
  let totalPay = Number(amount.value) + (amount.value * r / 100);
  rate.innerText = r + "%";
  total.innerText = totalPay.toFixed(2);
 };
 
-// Upload to Cloudinary
-async function uploadToCloudinary(file, folder) {
-    const url = `https://api.cloudinary.com/v1_1/dc5moeafv/upload`; // Cloud name
-    const preset = "zedmarket"; // unsigned preset
+// Upload to Cloudinary unsigned
+async function uploadToCloudinary(file, folder){
+  const url = `https://api.cloudinary.com/v1_1/dc5moeafv/upload`;
+  const preset = "zedmarket"; // unsigned preset
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("upload_preset", preset);
-    formData.append("folder", folder);
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", preset);
+  formData.append("folder", folder);
 
-    const response = await fetch(url, {
-        method: "POST",
-        body: formData
-    });
-
-    const data = await response.json();
-    return data.secure_url; // return uploaded file URL
+  const res = await fetch(url,{method:"POST",body:formData});
+  const data = await res.json();
+  if(data.error) throw data.error;
+  return data.secure_url;
 }
 
 // Submit Loan
 window.applyLoan = async ()=>{
- msg.innerText = "Submitting...";
+ msg.innerText="Submitting...";
 
- if(!nrcFront.files[0] || !nrcBack.files[0] || !facePhoto.files[0]){
-  msg.innerText = "Please upload all images";
-  return;
+ // Validate
+ if(!name.value||!phone.value||!nrc.value||!status.value||!location.value||!payment.value||!kinName.value||!kinPhone.value||!amount.value||!duration.value||!purpose.value){
+   msg.innerText="Please fill all fields";
+   return;
+ }
+ if(!nrcFront.files[0]||!nrcBack.files[0]||!facePhoto.files[0]){
+   msg.innerText="Please upload all images";
+   return;
  }
 
- try {
-     let front = await uploadToCloudinary(nrcFront.files[0], "nrcFront");
-     let back  = await uploadToCloudinary(nrcBack.files[0], "nrcBack");
-     let face  = await uploadToCloudinary(facePhoto.files[0], "facePhoto");
+ try{
+   const [front, back, face] = await Promise.all([
+     uploadToCloudinary(nrcFront.files[0],"nrcFront"),
+     uploadToCloudinary(nrcBack.files[0],"nrcBack"),
+     uploadToCloudinary(facePhoto.files[0],"facePhoto")
+   ]);
 
-     let r = rates[duration.value];
-     let interest = amount.value * r / 100;
+   const r = rates[duration.value] || 0;
+   const totalAmount = Number(amount.value) + (Number(amount.value)*r/100);
 
-     await addDoc(collection(db,"loans"),{
-      name: name.value,
-      phone: phone.value,
-      nrc: nrc.value,
-      status: status.value,
-      location: location.value,
-      payment: payment.value,
-      kin: {name: kinName.value, phone: kinPhone.value},
-      amount: Number(amount.value),
-      duration: duration.value,
-      rate: r,
-      total: Number(amount.value) + interest,
-      nrcFront: front,
-      nrcBack: back,
-      facePhoto: face,
-      purpose: purpose.value,
-      loanStatus: "Pending",
-      created: new Date()
-     });
+   await addDoc(collection(db,"loans"),{
+     name:name.value,
+     phone:phone.value,
+     nrc:nrc.value,
+     status:status.value,
+     location:location.value,
+     payment:payment.value,
+     kin:{name:kinName.value, phone:kinPhone.value},
+     amount:Number(amount.value),
+     duration:duration.value,
+     rate:r,
+     total:totalAmount,
+     nrcFront:front,
+     nrcBack:back,
+     facePhoto:face,
+     purpose:purpose.value,
+     loanStatus:"Pending",
+     created:new Date()
+   });
 
-     msg.innerText = "Application submitted successfully ✔";
- } catch (err) {
-     console.error(err);
-     msg.innerText = "Error submitting application ❌";
+   msg.innerText="Application submitted successfully ✔";
+
+   // Reset form
+   name.value=phone.value=nrc.value=status.value=location.value=payment.value=kinName.value=kinPhone.value=amount.value=duration.value=purpose.value="";
+   nrcFront.value=nrcBack.value=facePhoto.value=null;
+   rate.innerText="0%";
+   total.innerText="0.00";
+
+ }catch(err){
+   console.error(err);
+   msg.innerText="Error submitting application ❌";
  }
 };
 </script>
-
 </body>
 </html>
