@@ -28,22 +28,19 @@ small{color:#666}
 <!-- Calculator -->
 <div class="box">
 <h3>Loan Calculator</h3>
-<input id="amount" type="number" placeholder="Loan Amount (ZMW)">
+<input id="amount" type="number" placeholder="Loan Amount (ZMW)" min="1000" max="20000">
 <select id="duration">
 <option value="">Select Duration</option>
-<option value="2d">2 Days</option>
-<option value="5d">5 Days</option>
 <option value="1w">1 Week</option>
 <option value="2w">2 Weeks</option>
+<option value="3w">3 Weeks</option>
 <option value="1m">1 Month</option>
-<option value="2m">2 Months</option>
-<option value="3m">3 Months</option>
-<option value="4m">4 Months</option>
-<option value="5m">5 Months</option>
 </select>
 <p>Interest Rate: <b><span id="rate">0%</span></b></p>
 <p>Total Payable: <b>ZMW <span id="total">0.00</span></b></p>
+<p><small>⚠ Overdue payments attract 0.5% per day</small></p>
 <button id="calcBtn">Calculate</button>
+<p id="errorMsg"></p>
 </div>
 
 <!-- Loan Application -->
@@ -93,9 +90,6 @@ small{color:#666}
 <textarea id="purpose" placeholder="Purpose of Loan"></textarea>
 <button id="submitBtn">Submit Application</button>
 <p id="msg"></p>
-<p id="errorMsg"></p>
-</div>
-
 </div>
 
 <script type="module">
@@ -116,8 +110,10 @@ const db = getFirestore(app);
 
 // Interest rates
 const rates = {
- "2d":20,"5d":25,"1w":30,"2w":40,
- "1m":50,"2m":65,"3m":75,"4m":85,"5m":100
+  "1w": 15,
+  "2w": 25,
+  "3w": 30,
+  "1m": 40
 };
 
 // Elements
@@ -144,11 +140,21 @@ const submitBtn = document.getElementById("submitBtn");
 
 // Calculator
 calcBtn.addEventListener("click", ()=>{
- if(!amountEl.value || !durationEl.value){ rateEl.innerText="0%"; totalEl.innerText="0.00"; return; }
- let r = rates[durationEl.value];
- let totalPay = Number(amountEl.value) + (Number(amountEl.value) * r / 100);
- rateEl.innerText = r + "%";
- totalEl.innerText = totalPay.toFixed(2);
+  const amount = Number(amountEl.value);
+  if(!amount || !durationEl.value){
+    rateEl.innerText="0%"; totalEl.innerText="0.00"; 
+    return;
+  }
+  if(amount < 1000 || amount > 20000){
+    errorEl.innerText = "Loan amount must be between K1,000 and K20,000";
+    rateEl.innerText="0%"; totalEl.innerText="0.00"; 
+    return;
+  }
+  let r = rates[durationEl.value];
+  let totalPay = amount + (amount * r / 100);
+  rateEl.innerText = r + "%";
+  totalEl.innerText = totalPay.toFixed(2);
+  errorEl.innerText="";
 });
 
 // Cloudinary Upload
@@ -172,58 +178,63 @@ async function uploadToCloudinary(file, folder){
 
 // Submit Loan
 submitBtn.addEventListener("click", async ()=>{
- msgEl.innerText="Submitting..."; errorEl.innerText="";
+  msgEl.innerText="Submitting..."; errorEl.innerText="";
 
- if(!nameEl.value || !phoneEl.value || !nrcEl.value || !statusEl.value || !locationEl.value || !paymentEl.value || !kinNameEl.value || !kinPhoneEl.value || !amountEl.value || !durationEl.value || !purposeEl.value){
-   errorEl.innerText="Please fill all fields!"; msgEl.innerText=""; return;
- }
- if(!nrcFrontEl.files[0] || !nrcBackEl.files[0] || !facePhotoEl.files[0]){
-   errorEl.innerText="Please upload all images!"; msgEl.innerText=""; return;
- }
+  const amount = Number(amountEl.value);
+  if(!nameEl.value || !phoneEl.value || !nrcEl.value || !statusEl.value || !locationEl.value || !paymentEl.value || !kinNameEl.value || !kinPhoneEl.value || !amount || !durationEl.value || !purposeEl.value){
+    errorEl.innerText="Please fill all fields!"; msgEl.innerText=""; return;
+  }
+  if(amount < 1000 || amount > 20000){
+    errorEl.innerText = "Loan amount must be between K1,000 and K20,000"; 
+    msgEl.innerText=""; return;
+  }
+  if(!nrcFrontEl.files[0] || !nrcBackEl.files[0] || !facePhotoEl.files[0]){
+    errorEl.innerText="Please upload all images!"; msgEl.innerText=""; return;
+  }
 
- try{
-   const [front, back, face] = await Promise.all([
-     uploadToCloudinary(nrcFrontEl.files[0],"nrcFront"),
-     uploadToCloudinary(nrcBackEl.files[0],"nrcBack"),
-     uploadToCloudinary(facePhotoEl.files[0],"facePhoto")
-   ]);
+  try{
+    const [front, back, face] = await Promise.all([
+      uploadToCloudinary(nrcFrontEl.files[0],"nrcFront"),
+      uploadToCloudinary(nrcBackEl.files[0],"nrcBack"),
+      uploadToCloudinary(facePhotoEl.files[0],"facePhoto")
+    ]);
 
-   const r = rates[durationEl.value] || 0;
-   const totalAmount = Number(amountEl.value) + (Number(amountEl.value)*r/100);
+    const r = rates[durationEl.value] || 0;
+    const totalAmount = amount + (amount*r/100);
 
-   await addDoc(collection(db,"loans"),{
-     name:nameEl.value,
-     phone:phoneEl.value,
-     nrc:nrcEl.value,
-     status:statusEl.value,
-     location:locationEl.value,
-     payment:paymentEl.value,
-     kin:{name:kinNameEl.value, phone:kinPhoneEl.value},
-     amount:Number(amountEl.value),
-     duration:durationEl.value,
-     rate:r,
-     total:totalAmount,
-     nrcFront:front,
-     nrcBack:back,
-     facePhoto:face,
-     purpose:purposeEl.value,
-     loanStatus:"Pending",
-     created:new Date()
-   });
+    await addDoc(collection(db,"loans"),{
+      name:nameEl.value,
+      phone:phoneEl.value,
+      nrc:nrcEl.value,
+      status:statusEl.value,
+      location:locationEl.value,
+      payment:paymentEl.value,
+      kin:{name:kinNameEl.value, phone:kinPhoneEl.value},
+      amount:amount,
+      duration:durationEl.value,
+      rate:r,
+      total:totalAmount,
+      nrcFront:front,
+      nrcBack:back,
+      facePhoto:face,
+      purpose:purposeEl.value,
+      loanStatus:"Pending",
+      created:new Date()
+    });
 
-   msgEl.innerText="Application submitted successfully ✔";
-   errorEl.innerText="";
+    msgEl.innerText="Application submitted successfully ✔";
+    errorEl.innerText="";
 
-   // Reset form
-   nameEl.value=phoneEl.value=nrcEl.value=statusEl.value=locationEl.value=paymentEl.value=kinNameEl.value=kinPhoneEl.value=amountEl.value=durationEl.value=purposeEl.value="";
-   nrcFrontEl.value=nrcBackEl.value=facePhotoEl.value=null;
-   rateEl.innerText="0%"; totalEl.innerText="0.00";
+    // Reset form
+    nameEl.value=phoneEl.value=nrcEl.value=statusEl.value=locationEl.value=paymentEl.value=kinNameEl.value=kinPhoneEl.value=amountEl.value=durationEl.value=purposeEl.value="";
+    nrcFrontEl.value=nrcBackEl.value=facePhotoEl.value=null;
+    rateEl.innerText="0%"; totalEl.innerText="0.00";
 
- }catch(err){
-   console.error("Submission Error:", err);
-   errorEl.innerText="Error submitting application! Check console.";
-   msgEl.innerText="";
- }
+  }catch(err){
+    console.error("Submission Error:", err);
+    errorEl.innerText="Error submitting application! Check console.";
+    msgEl.innerText="";
+  }
 });
 </script>
 </body>
