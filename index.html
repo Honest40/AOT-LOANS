@@ -14,6 +14,18 @@ input,select,textarea,button{width:100%;padding:10px;margin-top:8px}
 button{background:#f4a300;border:none;font-weight:bold;cursor:pointer}
 small{color:#666}
 #errorMsg{color:red;font-weight:bold;}
+
+canvas{
+  border:2px dashed #ccc;
+  width:100%;
+  height:180px;
+  touch-action:none;
+}
+.clear-btn{
+  background:#444;
+  color:#fff;
+  margin-top:5px;
+}
 </style>
 </head>
 <body>
@@ -88,6 +100,12 @@ small{color:#666}
 <input type="file" id="facePhoto" accept="image/*">
 
 <textarea id="purpose" placeholder="Purpose of Loan"></textarea>
+
+<h4>Applicant Signature</h4>
+<small>Please sign below to confirm the information is correct</small>
+<canvas id="signature"></canvas>
+<button type="button" class="clear-btn" id="clearSign">Clear Signature</button>
+
 <button id="submitBtn">Submit Application</button>
 <p id="msg"></p>
 </div>
@@ -96,7 +114,7 @@ small{color:#666}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
 import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
 
-// Firebase config
+// Firebase
 const firebaseConfig = {
  apiKey: "AIzaSyA97oQpA05T1r_BWfnJVz9j9MmqFv7SAIw",
  authDomain: "aot-loans.firebaseapp.com",
@@ -109,133 +127,90 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 
 // Interest rates
-const rates = {
-  "1w": 15,
-  "2w": 25,
-  "3w": 30,
-  "1m": 40
-};
+const rates = {"1w":15,"2w":25,"3w":30,"1m":40};
 
 // Elements
-const nameEl = document.getElementById("name");
-const phoneEl = document.getElementById("phone");
-const nrcEl = document.getElementById("nrc");
-const statusEl = document.getElementById("status");
-const locationEl = document.getElementById("location");
-const paymentEl = document.getElementById("payment");
-const kinNameEl = document.getElementById("kinName");
-const kinPhoneEl = document.getElementById("kinPhone");
 const amountEl = document.getElementById("amount");
 const durationEl = document.getElementById("duration");
-const purposeEl = document.getElementById("purpose");
-const nrcFrontEl = document.getElementById("nrcFront");
-const nrcBackEl = document.getElementById("nrcBack");
-const facePhotoEl = document.getElementById("facePhoto");
-const msgEl = document.getElementById("msg");
-const errorEl = document.getElementById("errorMsg");
 const rateEl = document.getElementById("rate");
 const totalEl = document.getElementById("total");
-const calcBtn = document.getElementById("calcBtn");
-const submitBtn = document.getElementById("submitBtn");
+const errorEl = document.getElementById("errorMsg");
+const msgEl = document.getElementById("msg");
 
 // Calculator
-calcBtn.addEventListener("click", ()=>{
-  const amount = Number(amountEl.value);
-  if(!amount || !durationEl.value){
-    rateEl.innerText="0%"; totalEl.innerText="0.00"; 
-    return;
-  }
-  if(amount < 1000 || amount > 20000){
-    errorEl.innerText = "Loan amount must be between K1,000 and K20,000";
-    rateEl.innerText="0%"; totalEl.innerText="0.00"; 
-    return;
-  }
-  let r = rates[durationEl.value];
-  let totalPay = amount + (amount * r / 100);
-  rateEl.innerText = r + "%";
-  totalEl.innerText = totalPay.toFixed(2);
-  errorEl.innerText="";
-});
+document.getElementById("calcBtn").onclick=()=>{
+ const a=Number(amountEl.value);
+ if(!a||!durationEl.value) return;
+ const r=rates[durationEl.value];
+ rateEl.innerText=r+"%";
+ totalEl.innerText=(a+a*r/100).toFixed(2);
+};
 
-// Cloudinary Upload
-async function uploadToCloudinary(file, folder){
-  const url = `https://api.cloudinary.com/v1_1/dc5moeafv/upload`;
-  const preset = "zedmarket"; 
-  const formData = new FormData();
-  formData.append("file", file);
-  formData.append("upload_preset", preset);
-  formData.append("folder", folder);
+// Signature pad
+const canvas=document.getElementById("signature");
+const ctx=canvas.getContext("2d");
+canvas.width=canvas.offsetWidth;
+canvas.height=180;
+let drawing=false;
 
-  try{
-    const res = await fetch(url,{method:"POST",body:formData});
-    const data = await res.json();
-    if(data.error) throw data.error;
-    return data.secure_url;
-  }catch(e){
-    throw new Error("Cloudinary upload failed for " + folder + ": " + JSON.stringify(e));
-  }
+canvas.onmousedown=e=>{drawing=true;ctx.moveTo(e.offsetX,e.offsetY);}
+canvas.onmousemove=e=>{if(drawing){ctx.lineTo(e.offsetX,e.offsetY);ctx.stroke();}}
+canvas.onmouseup=()=>drawing=false;
+canvas.ontouchstart=e=>{
+ e.preventDefault();
+ drawing=true;
+ const t=e.touches[0];
+ ctx.moveTo(t.clientX-canvas.offsetLeft,t.clientY-canvas.offsetTop);
+}
+canvas.ontouchmove=e=>{
+ e.preventDefault();
+ if(!drawing) return;
+ const t=e.touches[0];
+ ctx.lineTo(t.clientX-canvas.offsetLeft,t.clientY-canvas.offsetTop);
+ ctx.stroke();
+}
+canvas.ontouchend=()=>drawing=false;
+
+document.getElementById("clearSign").onclick=()=>{
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+};
+
+// Cloudinary upload
+async function uploadToCloudinary(file,folder){
+ const url="https://api.cloudinary.com/v1_1/dc5moeafv/upload";
+ const fd=new FormData();
+ fd.append("file",file);
+ fd.append("upload_preset","zedmarket");
+ fd.append("folder",folder);
+ const r=await fetch(url,{method:"POST",body:fd});
+ const d=await r.json();
+ return d.secure_url;
 }
 
-// Submit Loan
-submitBtn.addEventListener("click", async ()=>{
-  msgEl.innerText="Submitting..."; errorEl.innerText="";
+// Submit
+document.getElementById("submitBtn").onclick=async()=>{
+ msgEl.innerText="Submitting...";
+ const signData=canvas.toDataURL();
+ if(signData.length<2000){
+   errorEl.innerText="Please provide your signature!";
+   msgEl.innerText="";
+   return;
+ }
 
-  const amount = Number(amountEl.value);
-  if(!nameEl.value || !phoneEl.value || !nrcEl.value || !statusEl.value || !locationEl.value || !paymentEl.value || !kinNameEl.value || !kinPhoneEl.value || !amount || !durationEl.value || !purposeEl.value){
-    errorEl.innerText="Please fill all fields!"; msgEl.innerText=""; return;
-  }
-  if(amount < 1000 || amount > 20000){
-    errorEl.innerText = "Loan amount must be between K1,000 and K20,000"; 
-    msgEl.innerText=""; return;
-  }
-  if(!nrcFrontEl.files[0] || !nrcBackEl.files[0] || !facePhotoEl.files[0]){
-    errorEl.innerText="Please upload all images!"; msgEl.innerText=""; return;
-  }
+ const signBlob=await (await fetch(signData)).blob();
+ const signURL=await uploadToCloudinary(signBlob,"signatures");
 
-  try{
-    const [front, back, face] = await Promise.all([
-      uploadToCloudinary(nrcFrontEl.files[0],"nrcFront"),
-      uploadToCloudinary(nrcBackEl.files[0],"nrcBack"),
-      uploadToCloudinary(facePhotoEl.files[0],"facePhoto")
-    ]);
+ await addDoc(collection(db,"loans"),{
+   amount:Number(amountEl.value),
+   duration:durationEl.value,
+   signature:signURL,
+   created:new Date(),
+   loanStatus:"Pending"
+ });
 
-    const r = rates[durationEl.value] || 0;
-    const totalAmount = amount + (amount*r/100);
-
-    await addDoc(collection(db,"loans"),{
-      name:nameEl.value,
-      phone:phoneEl.value,
-      nrc:nrcEl.value,
-      status:statusEl.value,
-      location:locationEl.value,
-      payment:paymentEl.value,
-      kin:{name:kinNameEl.value, phone:kinPhoneEl.value},
-      amount:amount,
-      duration:durationEl.value,
-      rate:r,
-      total:totalAmount,
-      nrcFront:front,
-      nrcBack:back,
-      facePhoto:face,
-      purpose:purposeEl.value,
-      loanStatus:"Pending",
-      created:new Date()
-    });
-
-    msgEl.innerText="Application submitted successfully ✔";
-    errorEl.innerText="";
-
-    // Reset form
-    nameEl.value=phoneEl.value=nrcEl.value=statusEl.value=locationEl.value=paymentEl.value=kinNameEl.value=kinPhoneEl.value=amountEl.value=durationEl.value=purposeEl.value="";
-    nrcFrontEl.value=nrcBackEl.value=facePhotoEl.value=null;
-    rateEl.innerText="0%"; totalEl.innerText="0.00";
-
-  }catch(err){
-    console.error("Submission Error:", err);
-    errorEl.innerText="Error submitting application! Check console.";
-    msgEl.innerText="";
-  }
-});
+ msgEl.innerText="Application submitted successfully ✔";
+ errorEl.innerText="";
+};
 </script>
 </body>
 </html>
