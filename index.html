@@ -2,287 +2,264 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>AOT Loans - User</title>
+<title>Website Suspended | HB Graphics</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<style>
-body{margin:0;font-family:Arial;background:#f4f4f4}
-header{background:#000;color:#fff;padding:15px;text-align:center}
-header span{color:#f4a300}
-.container{max-width:900px;margin:auto;padding:10px}
-.box{background:#fff;padding:15px;margin-bottom:15px;border-radius:8px}
-input,select,textarea,button{width:100%;padding:10px;margin-top:8px}
-button{background:#f4a300;border:none;font-weight:bold;cursor:pointer}
-small{color:#666}
-#errorMsg{color:red;font-weight:bold;}
 
-canvas{
-  width:100%;
-  height:180px;
-  border:2px dashed #ccc;
-  touch-action:none;
+<style>
+:root{
+    --red:#a30000;
+    --navy:#0b1a5c;
+    --yellow:#ffd400;
+    --white:#ffffff;
 }
-.clearBtn{
-  background:#444;
-  color:#fff;
+
+/* Body and background */
+body{
+    margin:0;
+    font-family: 'Arial', sans-serif;
+    background: linear-gradient(135deg, var(--navy), var(--red));
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+    color: var(--white);
+    text-align:center;
+    overflow:hidden;
+    position: relative;
+}
+
+/* Particle canvas */
+#particles {
+    position: absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    z-index:0;
+}
+
+/* Floating shapes */
+.shape{
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.12;
+    animation: float 25s linear infinite;
+}
+
+.shape1{width:120px;height:120px;background:var(--yellow);top:5%;left:10%;animation-delay:0s;}
+.shape2{width:160px;height:160px;background:var(--white);top:75%;left:70%;animation-delay:6s;}
+.shape3{width:100px;height:100px;background:var(--red);top:40%;left:55%;animation-delay:12s;}
+.shape4{width:140px;height:140px;background:var(--navy);top:80%;left:20%;animation-delay:18s;}
+.shape5{width:90px;height:90px;background:var(--yellow);top:30%;left:30%;animation-delay:3s;}
+
+@keyframes float{
+    0% {transform: translateY(0) translateX(0);}
+    50% {transform: translateY(-50px) translateX(30px);}
+    100% {transform: translateY(0) translateX(0);}
+}
+
+/* Main box */
+.box{
+    position: relative;
+    background: rgba(255,255,255,0.08);
+    padding:50px;
+    border-radius:20px;
+    width:90%;
+    max-width:700px;
+    backdrop-filter: blur(15px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+    animation: fadeIn 1.5s ease forwards;
+    z-index: 1;
+}
+
+/* Headings */
+h1{
+    font-size:40px;
+    margin-bottom:20px;
+    color: var(--white);
+    animation: pulse 2s infinite;
+}
+
+/* Text */
+p{
+    font-size:16px;
+    line-height:1.6;
+    margin-bottom:15px;
+    color: var(--white);
+    animation: fadeText 2s ease forwards;
+}
+
+/* Countdown */
+.countdown{
+    font-size:24px;
+    font-weight:bold;
+    margin:20px 0;
+    color: var(--yellow);
+    text-shadow: 0 0 10px var(--yellow), 0 0 20px var(--yellow);
+    animation: glowCountdown 2s infinite alternate;
+}
+
+/* Buttons */
+.btn{
+    display:inline-block;
+    padding:14px 35px;
+    background: var(--yellow);
+    color: var(--navy);
+    text-decoration:none;
+    border-radius:30px;
+    font-weight:bold;
+    transition:0.3s;
+    margin:7px;
+    box-shadow: 0 0 5px var(--yellow);
+}
+
+.btn:hover{
+    background: var(--white);
+    color: var(--red);
+    transform: scale(1.08);
+}
+
+.btn-reactivate{
+    animation: reactivatePulse 1.5s infinite;
+    font-size:18px;
+}
+
+/* Footer */
+.footer{
+    margin-top:30px;
+    font-size:14px;
+    opacity:0.85;
+    color: var(--white);
+}
+
+/* Animations */
+@keyframes fadeIn{
+    from {opacity:0; transform: translateY(20px);}
+    to {opacity:1; transform: translateY(0);}
+}
+
+@keyframes pulse{
+    0% { text-shadow: 0 0 10px var(--yellow);}
+    50% { text-shadow: 0 0 25px var(--yellow);}
+    100% { text-shadow: 0 0 10px var(--yellow);}
+}
+
+@keyframes reactivatePulse{
+    0% { box-shadow: 0 0 10px var(--yellow);}
+    50% { box-shadow: 0 0 25px var(--yellow);}
+    100% { box-shadow: 0 0 10px var(--yellow);}
+}
+
+@keyframes glowCountdown{
+    0% {text-shadow: 0 0 10px var(--yellow), 0 0 20px var(--yellow);}
+    50% {text-shadow: 0 0 20px var(--yellow), 0 0 40px var(--yellow);}
+    100% {text-shadow: 0 0 10px var(--yellow), 0 0 20px var(--yellow);}
+}
+
+@keyframes fadeText{
+    from {opacity:0;}
+    to {opacity:1;}
 }
 </style>
 </head>
 
 <body>
 
-<header>
-<h2>AOT <span>Loans</span></h2>
-<small>Simple • Fast • Online Loans</small>
-</header>
+<canvas id="particles"></canvas>
 
-<div class="container">
+<!-- Floating shapes -->
+<div class="shape shape1"></div>
+<div class="shape shape2"></div>
+<div class="shape shape3"></div>
+<div class="shape shape4"></div>
+<div class="shape shape5"></div>
 
-<!-- Calculator -->
 <div class="box">
-<h3>Loan Calculator</h3>
-<input id="amount" type="number" placeholder="Loan Amount (ZMW)" min="1000" max="20000">
-<select id="duration">
-<option value="">Select Duration</option>
-<option value="1w">1 Week</option>
-<option value="2w">2 Weeks</option>
-<option value="3w">3 Weeks</option>
-<option value="1m">1 Month</option>
-</select>
-<p>Interest Rate: <b><span id="rate">0%</span></b></p>
-<p>Total Payable: <b>ZMW <span id="total">0.00</span></b></p>
-<p><small>⚠ Overdue payments attract 0.5% per day</small></p>
-<button id="calcBtn">Calculate</button>
-<p id="errorMsg"></p>
+    <h1>Trial Expired</h1>
+
+    <p>
+        This website was provided under a complimentary trial by <strong>HB Graphics</strong> to showcase its full functionality.
+    </p>
+
+    <p>
+        The trial period has ended, and the website is currently unavailable.
+    </p>
+
+    <div class="countdown" id="countdown"></div>
+
+    <p>
+        Reactivate your website now to restore full access and continue enjoying professional hosting and maintenance.
+    </p>
+
+    <a href="mailto:hbforlife40@gmail.com" class="btn btn-reactivate">Email HB Graphics</a>
+    <a href="https://wa.me/260776942402" class="btn btn-reactivate" style="background:var(--navy); color:var(--yellow);">WhatsApp HB Graphics</a>
+
+    <div class="footer">
+        Powered & Managed by <strong>HB Graphics</strong> | WhatsApp: +260 776 942 402 | Email: hbforlife40@gmail.com
+    </div>
 </div>
 
-<!-- Loan Application -->
-<div class="box">
-<h3>Loan Application</h3>
-<input id="name" placeholder="Full Name">
-<input id="phone" placeholder="Phone Number">
-<input id="nrc" placeholder="NRC Number">
+<script>
+// Countdown timer
+const trialEndDate = new Date("2026-02-26T00:00:00").getTime();
+const countdownElement = document.getElementById("countdown");
 
-<select id="status">
-<option value="">Status</option>
-<option>Student</option>
-<option>Employed</option>
-<option>Business Owner</option>
-</select>
+function updateCountdown(){
+    const now = new Date().getTime();
+    const diff = now - trialEndDate;
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+    const hours = Math.floor((diff % (1000 * 60 * 60 * 24)) / (1000*60*60));
+    const minutes = Math.floor((diff % (1000*60*60)) / (1000*60));
+    const seconds = Math.floor((diff % (1000*60)) / 1000);
 
-<select id="location">
-<option value="">Location</option>
-<option>Lusaka</option>
-<option>Copperbelt</option>
-<option>Central</option>
-<option>Eastern</option>
-<option>Northern</option>
-<option>Southern</option>
-<option>Western</option>
-<option>Muchinga</option>
-</select>
+    countdownElement.innerHTML = `Trial expired <strong>${days}d ${hours}h ${minutes}m ${seconds}s</strong> ago`;
+}
 
-<select id="payment">
-<option value="">Payment Method</option>
-<option>Mobile Money</option>
-<option>Bank Transfer</option>
-<option>Cash</option>
-</select>
+updateCountdown();
+setInterval(updateCountdown, 1000);
 
-<h4>Next of Kin</h4>
-<input id="kinName" placeholder="Full Name">
-<input id="kinPhone" placeholder="Phone Number">
-
-<label>NRC Front</label>
-<input type="file" id="nrcFront" accept="image/*">
-<label>NRC Back</label>
-<input type="file" id="nrcBack" accept="image/*">
-<label>Face Photo</label>
-<input type="file" id="facePhoto" accept="image/*">
-
-<textarea id="purpose" placeholder="Purpose of Loan"></textarea>
-
-<!-- ✅ SIGNATURE ADDED (NOT REMOVING ANYTHING) -->
-<h4>Applicant Signature</h4>
-<small>Sign below to confirm details</small>
-<canvas id="signature"></canvas>
-<button type="button" class="clearBtn" id="clearSign">Clear Signature</button>
-
-<button id="submitBtn">Submit Application</button>
-<p id="msg"></p>
-</div>
-
-<script type="module">
-import { initializeApp } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-app.js";
-import { getFirestore, addDoc, collection } from "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore.js";
-
-// Firebase config
-const firebaseConfig = {
- apiKey: "AIzaSyA97oQpA05T1r_BWfnJVz9j9MmqFv7SAIw",
- authDomain: "aot-loans.firebaseapp.com",
- projectId: "aot-loans",
- storageBucket: "aot-loans.firebasestorage.app",
- messagingSenderId: "1023143461166",
- appId: "1:1023143461166:web:7025fd84b752fa26753abf"
-};
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-
-// Interest rates
-const rates = {
- "1w": 15,
- "2w": 25,
- "3w": 30,
- "1m": 40
-};
-
-// Elements
-const nameEl = document.getElementById("name");
-const phoneEl = document.getElementById("phone");
-const nrcEl = document.getElementById("nrc");
-const statusEl = document.getElementById("status");
-const locationEl = document.getElementById("location");
-const paymentEl = document.getElementById("payment");
-const kinNameEl = document.getElementById("kinName");
-const kinPhoneEl = document.getElementById("kinPhone");
-const amountEl = document.getElementById("amount");
-const durationEl = document.getElementById("duration");
-const purposeEl = document.getElementById("purpose");
-const nrcFrontEl = document.getElementById("nrcFront");
-const nrcBackEl = document.getElementById("nrcBack");
-const facePhotoEl = document.getElementById("facePhoto");
-const msgEl = document.getElementById("msg");
-const errorEl = document.getElementById("errorMsg");
-const rateEl = document.getElementById("rate");
-const totalEl = document.getElementById("total");
-const calcBtn = document.getElementById("calcBtn");
-const submitBtn = document.getElementById("submitBtn");
-
-/* Calculator — UNCHANGED */
-calcBtn.addEventListener("click", ()=>{
- const amount = Number(amountEl.value);
- if(!amount || !durationEl.value){rateEl.innerText="0%";totalEl.innerText="0.00";return;}
- if(amount < 1000 || amount > 20000){
-  errorEl.innerText="Loan amount must be between K1,000 and K20,000";
-  rateEl.innerText="0%"; totalEl.innerText="0.00"; return;
- }
- let r = rates[durationEl.value];
- totalEl.innerText=(amount+(amount*r/100)).toFixed(2);
- rateEl.innerText=r+"%";
- errorEl.innerText="";
-});
-
-/* ✅ ANDROID-SAFE SIGNATURE */
-const canvas=document.getElementById("signature");
-const ctx=canvas.getContext("2d");
-let drawing=false;
+// Particle animation
+const canvas = document.getElementById('particles');
+const ctx = canvas.getContext('2d');
+let particles = [];
 
 function resizeCanvas(){
- const ratio=window.devicePixelRatio||1;
- canvas.width=canvas.offsetWidth*ratio;
- canvas.height=180*ratio;
- ctx.scale(ratio,ratio);
- ctx.lineWidth=2;
- ctx.lineCap="round";
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
 }
+window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-function pos(e){
- const r=canvas.getBoundingClientRect();
- if(e.touches){
-  return {x:e.touches[0].clientX-r.left,y:e.touches[0].clientY-r.top};
- }
- return {x:e.clientX-r.left,y:e.clientY-r.top};
+function createParticles(){
+    particles = [];
+    for(let i=0;i<100;i++){
+        particles.push({
+            x: Math.random()*canvas.width,
+            y: Math.random()*canvas.height,
+            r: Math.random()*2+1,
+            dx: (Math.random()-0.5)*0.5,
+            dy: (Math.random()-0.5)*0.5,
+            color: ['#ffd400','#ffffff','#a30000','#0b1a5c'][Math.floor(Math.random()*4)]
+        });
+    }
 }
+createParticles();
 
-canvas.addEventListener("mousedown",e=>{
- drawing=true;
- const p=pos(e);
- ctx.beginPath(); ctx.moveTo(p.x,p.y);
-});
-canvas.addEventListener("mousemove",e=>{
- if(!drawing) return;
- const p=pos(e);
- ctx.lineTo(p.x,p.y); ctx.stroke();
-});
-canvas.addEventListener("mouseup",()=>drawing=false);
-canvas.addEventListener("mouseleave",()=>drawing=false);
-
-canvas.addEventListener("touchstart",e=>{
- e.preventDefault();
- drawing=true;
- const p=pos(e);
- ctx.beginPath(); ctx.moveTo(p.x,p.y);
-},{passive:false});
-
-canvas.addEventListener("touchmove",e=>{
- e.preventDefault();
- if(!drawing) return;
- const p=pos(e);
- ctx.lineTo(p.x,p.y); ctx.stroke();
-},{passive:false});
-
-canvas.addEventListener("touchend",()=>drawing=false,{passive:false});
-clearSign.onclick=()=>ctx.clearRect(0,0,canvas.width,canvas.height);
-
-/* Cloudinary Upload — UNCHANGED */
-async function uploadToCloudinary(file, folder){
- const url="https://api.cloudinary.com/v1_1/dc5moeafv/upload";
- const preset="zedmarket";
- const formData=new FormData();
- formData.append("file",file);
- formData.append("upload_preset",preset);
- formData.append("folder",folder);
- const res=await fetch(url,{method:"POST",body:formData});
- const data=await res.json();
- return data.secure_url;
+function animateParticles(){
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    for(let p of particles){
+        ctx.beginPath();
+        ctx.arc(p.x,p.y,p.r,0,Math.PI*2);
+        ctx.fillStyle=p.color;
+        ctx.fill();
+        p.x += p.dx;
+        p.y += p.dy;
+        if(p.x<0) p.x=canvas.width;
+        if(p.x>canvas.width) p.x=0;
+        if(p.y<0) p.y=canvas.height;
+        if(p.y>canvas.height) p.y=0;
+    }
+    requestAnimationFrame(animateParticles);
 }
-
-/* Submit — ONLY SIGNATURE ADDED */
-submitBtn.addEventListener("click", async ()=>{
- msgEl.innerText="Submitting...";
- errorEl.innerText="";
-
- const signData=canvas.toDataURL();
- if(signData.length<2000){
-  errorEl.innerText="Please sign before submitting!";
-  msgEl.innerText="";
-  return;
- }
- const signBlob=await (await fetch(signData)).blob();
- const signatureURL=await uploadToCloudinary(signBlob,"signatures");
-
- const [front,back,face]=await Promise.all([
-  uploadToCloudinary(nrcFrontEl.files[0],"nrcFront"),
-  uploadToCloudinary(nrcBackEl.files[0],"nrcBack"),
-  uploadToCloudinary(facePhotoEl.files[0],"facePhoto")
- ]);
-
- const r=rates[durationEl.value]||0;
- const totalAmount=Number(amountEl.value)+(Number(amountEl.value)*r/100);
-
- await addDoc(collection(db,"loans"),{
-  name:nameEl.value,
-  phone:phoneEl.value,
-  nrc:nrcEl.value,
-  status:statusEl.value,
-  location:locationEl.value,
-  payment:paymentEl.value,
-  kin:{name:kinNameEl.value,phone:kinPhoneEl.value},
-  amount:Number(amountEl.value),
-  duration:durationEl.value,
-  rate:r,
-  total:totalAmount,
-  nrcFront:front,
-  nrcBack:back,
-  facePhoto:face,
-  purpose:purposeEl.value,
-  signature:signatureURL,
-  loanStatus:"Pending",
-  created:new Date()
- });
-
- msgEl.innerText="Application submitted successfully ✔";
-});
+animateParticles();
 </script>
 
 </body>
